@@ -2,12 +2,13 @@
 // FIREBASE CONFIG — Erstatt med din egen fra Firebase Console
 // ============================================================
 const firebaseConfig = {
-  apiKey:            "DIN-API-KEY",
-  authDomain:        "DITT-PROSJEKT.firebaseapp.com",
-  projectId:         "DITT-PROSJEKT",
-  storageBucket:     "DITT-PROSJEKT.appspot.com",
-  messagingSenderId: "000000000000",
-  appId:             "1:000000000000:web:xxxxxxxxxx"
+  apiKey:            "AIzaSyBlGlAmjFinbDhby5LmHeE4tRM2izF85uE",
+  authDomain:        "ketlcloud.firebaseapp.com",
+  projectId:         "ketlcloud",
+  storageBucket:     "ketlcloud.firebasestorage.app",
+  messagingSenderId: "238849700424",
+  appId:             "1:238849700424:web:43143057604f8203b49e7d",
+  measurementId:     "G-36LXN3WEM8"
 };
 
 // ============================================================
