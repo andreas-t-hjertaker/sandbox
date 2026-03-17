@@ -23,3 +23,4 @@ export {
   resetPassword,
   onAuthChange,
 } from "./auth";
+export { fetchApi, apiGet, apiPost, apiPut, apiDelete } from "../api-client";

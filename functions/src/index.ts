@@ -1,35 +1,11 @@
-import { onRequest, type Request } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { z } from "zod";
-import type { Response } from "express";
+import { success, fail, withAuth, withValidation, type RouteContext } from "./middleware";
 
 admin.initializeApp();
 
 const db = admin.firestore();
-
-function success<T>(res: Response, data: T, status = 200) {
-  res.status(status).json({ success: true, data });
-}
-
-function fail(res: Response, message: string, status = 400) {
-  res.status(status).json({ success: false, error: message });
-}
-
-// ============================================================
-// Auth-middleware — verifiserer Firebase ID-token
-// ============================================================
-
-async function verifyAuth(req: Request) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
-    return null;
-  }
-  try {
-    return await admin.auth().verifyIdToken(header.split("Bearer ")[1]);
-  } catch {
-    return null;
-  }
-}
 
 // ============================================================
 // Zod-skjemaer
@@ -39,6 +15,78 @@ const createNoteSchema = z.object({
   title: z.string().min(1, "Tittel er påkrevd").max(200),
   content: z.string().max(10000).optional().default(""),
 });
+
+// ============================================================
+// Rute-handlers
+// ============================================================
+
+/** GET / — API-info (offentlig) */
+const getRoot = ({ res }: RouteContext) => {
+  success(res, { message: "ketl cloud API", version: "0.1.0" });
+};
+
+/** GET /collections — List Firestore-samlinger (offentlig) */
+const getCollections = async ({ res }: RouteContext) => {
+  const collections = await db.listCollections();
+  success(res, { collections: collections.map((c) => c.id) });
+};
+
+/** GET /me — Brukerinfo (krever auth) */
+const getMe = withAuth(async ({ user, res }) => {
+  success(res, {
+    uid: user.uid,
+    email: user.email,
+    name: user.name,
+    picture: user.picture,
+  });
+});
+
+/** POST /notes — Opprett notat (krever auth + validering) */
+const createNote = withValidation(createNoteSchema, async ({ user, data, res }) => {
+  const note = await db.collection("notes").add({
+    ...data,
+    userId: user.uid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  success(res, { id: note.id, ...data }, 201);
+});
+
+/** GET /notes — Hent brukerens notater (krever auth) */
+const getNotes = withAuth(async ({ user, res }) => {
+  const snapshot = await db
+    .collection("notes")
+    .where("userId", "==", user.uid)
+    .orderBy("createdAt", "desc")
+    .limit(50)
+    .get();
+
+  const notes = snapshot.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
+
+  success(res, notes);
+});
+
+// ============================================================
+// Ruter — enkel stibasert ruting
+// ============================================================
+
+type Route = {
+  method: string;
+  path: string;
+  handler: (ctx: RouteContext) => Promise<void> | void;
+};
+
+const routes: Route[] = [
+  { method: "GET", path: "/", handler: getRoot },
+  { method: "GET", path: "/collections", handler: getCollections },
+  { method: "GET", path: "/me", handler: getMe },
+  { method: "POST", path: "/notes", handler: createNote },
+  { method: "GET", path: "/notes", handler: getNotes },
+];
 
 // ============================================================
 // HTTP Functions
@@ -64,90 +112,19 @@ export const health = onRequest(
 );
 
 /**
- * Hoved-API med enkel stibasert ruting
+ * Hoved-API med stibasert ruting og middleware
  */
 export const api = onRequest(
   { region: "europe-west1", cors: true, invoker: "public" },
   async (req, res) => {
-    const { method, path } = req;
+    const route = routes.find(
+      (r) => r.method === req.method && r.path === req.path
+    );
 
-    // --- Offentlige ruter ---
-
-    if (method === "GET" && path === "/") {
-      success(res, { message: "ketl cloud API", version: "0.1.0" });
-      return;
+    if (route) {
+      await route.handler({ req, res });
+    } else {
+      fail(res, "Ikke funnet", 404);
     }
-
-    if (method === "GET" && path === "/collections") {
-      const collections = await db.listCollections();
-      success(res, { collections: collections.map((c) => c.id) });
-      return;
-    }
-
-    // --- Beskyttede ruter (krever autentisering) ---
-
-    const user = await verifyAuth(req);
-
-    if (method === "GET" && path === "/me") {
-      if (!user) {
-        fail(res, "Ikke autentisert", 401);
-        return;
-      }
-      success(res, {
-        uid: user.uid,
-        email: user.email,
-        name: user.name,
-        picture: user.picture,
-      });
-      return;
-    }
-
-    if (method === "POST" && path === "/notes") {
-      if (!user) {
-        fail(res, "Ikke autentisert", 401);
-        return;
-      }
-
-      const parsed = createNoteSchema.safeParse(req.body);
-      if (!parsed.success) {
-        fail(res, parsed.error.errors.map((e) => e.message).join(", "));
-        return;
-      }
-
-      const note = await db.collection("notes").add({
-        ...parsed.data,
-        userId: user.uid,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      success(res, { id: note.id, ...parsed.data }, 201);
-      return;
-    }
-
-    if (method === "GET" && path === "/notes") {
-      if (!user) {
-        fail(res, "Ikke autentisert", 401);
-        return;
-      }
-
-      const snapshot = await db
-        .collection("notes")
-        .where("userId", "==", user.uid)
-        .orderBy("createdAt", "desc")
-        .limit(50)
-        .get();
-
-      const notes = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
-
-      success(res, notes);
-      return;
-    }
-
-    // --- 404 ---
-    fail(res, "Ikke funnet", 404);
   }
 );
