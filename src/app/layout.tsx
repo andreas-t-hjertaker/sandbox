@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
-import { Inter, Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AnalyticsProvider } from "@/components/analytics-provider";
-import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
 
-const inter = Inter({ subsets: ["latin"] });
+const geistMono = Geist_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "ketlcloud",
-  description: "SaaS foundation",
+  title: "ketl cloud",
+  description: "AI-driven microservice orchestration",
 };
 
 export default function RootLayout({
@@ -19,10 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="no" className={cn("dark", "font-sans", geist.variable)}>
-      <body className={`${inter.className} bg-neutral-950 text-neutral-100 antialiased`}>
+    <html lang="no" className="dark" suppressHydrationWarning>
+      <body
+        className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}
+      >
         <AnalyticsProvider />
-        <main className="min-h-screen">{children}</main>
+        {children}
       </body>
     </html>
   );
