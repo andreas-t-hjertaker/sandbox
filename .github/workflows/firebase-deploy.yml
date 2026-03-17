@@ -44,6 +44,6 @@ jobs:
 
       # Deploy functions
       - name: Deploy Firebase Functions
-        run: npx firebase-tools@latest deploy --only functions --project ketlcloud
+        run: npx firebase-tools@latest deploy --only functions --project ketlcloud --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
