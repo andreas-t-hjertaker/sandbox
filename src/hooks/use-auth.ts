@@ -15,6 +15,10 @@ import {
   signUpWithEmail,
   signOutUser,
   resetPassword,
+  signInAnonymous,
+  sendEmailLink,
+  isEmailLink,
+  completeEmailLinkSignIn,
 } from "@/lib/firebase/auth";
 import type { User } from "@/types";
 
@@ -27,6 +31,9 @@ type AuthContextType = {
   signUpEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  signInAnonymously: () => Promise<void>;
+  sendEmailSignInLink: (email: string) => Promise<void>;
+  completeEmailSignIn: () => Promise<boolean>;
 };
 
 // Eksporter context slik at provider-komponenten kan bruke den
@@ -85,6 +92,33 @@ export function useAuthState() {
     await resetPassword(email);
   }, []);
 
+  const handleSignInAnonymously = useCallback(async () => {
+    await signInAnonymous();
+  }, []);
+
+  const handleSendEmailSignInLink = useCallback(async (email: string) => {
+    await sendEmailLink(email);
+  }, []);
+
+  /**
+   * Fullfør e-postlenke-innlogging.
+   * Returnerer `true` hvis URL-en var en gyldig innloggingslenke og brukeren ble logget inn.
+   */
+  const handleCompleteEmailSignIn = useCallback(async (): Promise<boolean> => {
+    const url = window.location.href;
+    if (!isEmailLink(url)) return false;
+
+    let email = window.localStorage.getItem("emailForSignIn");
+    if (!email) {
+      // Dersom brukeren åpner lenken på en annen enhet
+      email = window.prompt("Skriv inn e-postadressen du brukte for å logge inn:");
+    }
+    if (!email) return false;
+
+    await completeEmailLinkSignIn(email, url);
+    return true;
+  }, []);
+
   return {
     user,
     firebaseUser,
@@ -94,5 +128,8 @@ export function useAuthState() {
     signUpEmail,
     signOut: handleSignOut,
     resetPassword: handleResetPassword,
+    signInAnonymously: handleSignInAnonymously,
+    sendEmailSignInLink: handleSendEmailSignInLink,
+    completeEmailSignIn: handleCompleteEmailSignIn,
   };
 }

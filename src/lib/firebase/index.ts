@@ -22,5 +22,9 @@ export {
   signOutUser,
   resetPassword,
   onAuthChange,
+  signInAnonymous,
+  sendEmailLink,
+  isEmailLink,
+  completeEmailLinkSignIn,
 } from "./auth";
 export { fetchApi, apiGet, apiPost, apiPut, apiDelete } from "../api-client";
