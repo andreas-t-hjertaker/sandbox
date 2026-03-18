@@ -21,7 +21,9 @@ import {
   Cloud,
   CreditCard,
   Code,
+  Shield,
 } from "lucide-react";
+import { useAdmin } from "@/hooks/use-admin";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,10 +35,15 @@ const navItems = [
 
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const pathname = usePathname();
+  const { isAdmin } = useAdmin();
+
+  const allItems = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: Shield }]
+    : navItems;
 
   return (
     <nav className="space-y-1">
-      {navItems.map((item) => {
+      {allItems.map((item) => {
         const isActive =
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -106,10 +113,15 @@ export function Sidebar() {
 /** Kollapset navigasjon — bare ikoner */
 function CollapsedNav() {
   const pathname = usePathname();
+  const { isAdmin } = useAdmin();
+
+  const allItems = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: Shield }]
+    : navItems;
 
   return (
     <nav className="space-y-1">
-      {navItems.map((item) => {
+      {allItems.map((item) => {
         const isActive =
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href));

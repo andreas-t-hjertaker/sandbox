@@ -104,6 +104,21 @@ export function withValidation<T>(
 }
 
 // ============================================================
+// Admin-middleware
+// ============================================================
+
+/** Sjekk om autentisert bruker har admin-rolle */
+export function withAdmin(handler: AuthHandler): PublicHandler {
+  return withAuth(async (ctx) => {
+    if (!ctx.user.admin) {
+      fail(ctx.res, "Krever administratortilgang", 403);
+      return;
+    }
+    await handler(ctx);
+  });
+}
+
+// ============================================================
 // API-nøkkel eller Firebase Auth middleware
 // ============================================================
 

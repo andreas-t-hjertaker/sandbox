@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AiAssistant } from "@/modules/ai-assistant";
+import { OnboardingStepper } from "@/components/onboarding-stepper";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
@@ -86,6 +87,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             "Tilgjengelige tjenester: Firebase Hosting, Firestore, Cloud Storage, Cloud Functions, AI Logic, Analytics.",
         })}
       />
+      <OnboardingStepper />
     </div>
   );
 }

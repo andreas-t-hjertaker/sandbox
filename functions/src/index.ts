@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import Stripe from "stripe";
 import { z } from "zod";
-import { success, fail, withAuth, withValidation, rateLimit, type RouteContext } from "./middleware";
+import { success, fail, withAuth, withAdmin, withValidation, rateLimit, type RouteContext } from "./middleware";
 
 admin.initializeApp();
 
@@ -321,6 +321,225 @@ const revokeApiKey = withAuth(async ({ user, req, res }) => {
 });
 
 // ============================================================
+// Admin-handlers
+// ============================================================
+
+/** POST /admin/set-role — Sett admin-rolle på en bruker */
+const setAdminRole = withAdmin(async ({ req, res }) => {
+  const { uid, admin: isAdmin } = req.body as { uid?: string; admin?: boolean };
+  if (!uid) {
+    fail(res, "uid er påkrevd");
+    return;
+  }
+  await admin.auth().setCustomUserClaims(uid, { admin: !!isAdmin });
+  success(res, { uid, admin: !!isAdmin });
+});
+
+/** GET /admin/users — List alle brukere */
+const listAdminUsers = withAdmin(async ({ req, res }) => {
+  const pageToken = req.query.pageToken as string | undefined;
+  const result = await admin.auth().listUsers(100, pageToken || undefined);
+
+  const users = result.users.map((u) => ({
+    uid: u.uid,
+    email: u.email ?? null,
+    displayName: u.displayName ?? null,
+    photoURL: u.photoURL ?? null,
+    disabled: u.disabled,
+    creationTime: u.metadata.creationTime,
+    lastSignInTime: u.metadata.lastSignInTime,
+    customClaims: u.customClaims ?? {},
+  }));
+
+  success(res, { users, pageToken: result.pageToken ?? null });
+});
+
+/** GET /admin/users/:uid — Hent brukerdetaljer med abonnement og API-nøkler */
+const getAdminUser = withAdmin(async ({ req, res }) => {
+  const parts = req.path.split("/");
+  const uid = parts[parts.length - 1];
+
+  if (!uid) {
+    fail(res, "uid er påkrevd");
+    return;
+  }
+
+  try {
+    const userRecord = await admin.auth().getUser(uid);
+    const subDoc = await db.collection("subscriptions").doc(uid).get();
+    const keysSnap = await db.collection("apiKeys")
+      .where("userId", "==", uid)
+      .get();
+
+    success(res, {
+      user: {
+        uid: userRecord.uid,
+        email: userRecord.email ?? null,
+        displayName: userRecord.displayName ?? null,
+        photoURL: userRecord.photoURL ?? null,
+        disabled: userRecord.disabled,
+        creationTime: userRecord.metadata.creationTime,
+        lastSignInTime: userRecord.metadata.lastSignInTime,
+        customClaims: userRecord.customClaims ?? {},
+      },
+      subscription: subDoc.exists ? subDoc.data() : null,
+      apiKeyCount: keysSnap.size,
+    });
+  } catch {
+    fail(res, "Bruker ikke funnet", 404);
+  }
+});
+
+/** POST /admin/users/:uid/disable — Aktiver/deaktiver bruker */
+const disableAdminUser = withAdmin(async ({ req, res }) => {
+  const parts = req.path.split("/");
+  // Sti: /admin/users/:uid/disable — uid er nest siste
+  const uid = parts[parts.length - 2];
+  const { disabled } = req.body as { disabled?: boolean };
+
+  if (!uid) {
+    fail(res, "uid er påkrevd");
+    return;
+  }
+
+  await admin.auth().updateUser(uid, { disabled: !!disabled });
+  success(res, { uid, disabled: !!disabled });
+});
+
+/** DELETE /admin/users/:uid — Slett bruker og all data */
+const deleteAdminUser = withAdmin(async ({ req, res }) => {
+  const parts = req.path.split("/");
+  const uid = parts[parts.length - 1];
+
+  if (!uid) {
+    fail(res, "uid er påkrevd");
+    return;
+  }
+
+  // Slett Firestore-data
+  const batch = db.batch();
+  const subRef = db.collection("subscriptions").doc(uid);
+  batch.delete(subRef);
+
+  const keysSnap = await db.collection("apiKeys").where("userId", "==", uid).get();
+  keysSnap.docs.forEach((d) => batch.delete(d.ref));
+
+  const notesSnap = await db.collection("notes").where("userId", "==", uid).get();
+  notesSnap.docs.forEach((d) => batch.delete(d.ref));
+
+  await batch.commit();
+
+  // Slett Firebase Auth-bruker
+  await admin.auth().deleteUser(uid);
+
+  success(res, { uid, deleted: true });
+});
+
+/** GET /admin/stats — Aggregerte statistikker */
+const getAdminStats = withAdmin(async ({ res }) => {
+  const [usersResult, subsSnap, keysSnap] = await Promise.all([
+    admin.auth().listUsers(1000),
+    db.collection("subscriptions").where("status", "==", "active").get(),
+    db.collection("apiKeys").where("revoked", "==", false).get(),
+  ]);
+
+  success(res, {
+    totalUsers: usersResult.users.length,
+    activeSubscriptions: subsSnap.size,
+    totalApiKeys: keysSnap.size,
+  });
+});
+
+/** GET /admin/feature-flags — List alle feature flags (offentlig) */
+const listFeatureFlags = async ({ res }: RouteContext) => {
+  const snap = await db.collection("featureFlags").orderBy("createdAt", "desc").get();
+  const flags = snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
+  success(res, flags);
+};
+
+/** POST /admin/feature-flags — Opprett ny feature flag */
+const createFeatureFlag = withAdmin(async ({ req, res }) => {
+  const { key, label, description, enabled, plans } = req.body as {
+    key?: string; label?: string; description?: string; enabled?: boolean; plans?: string[];
+  };
+
+  if (!key || !label) {
+    fail(res, "key og label er påkrevd");
+    return;
+  }
+
+  const docRef = await db.collection("featureFlags").add({
+    key,
+    label,
+    description: description || "",
+    enabled: !!enabled,
+    plans: plans || [],
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  success(res, { id: docRef.id, key, label }, 201);
+});
+
+/** PUT /admin/feature-flags/:id — Oppdater en feature flag */
+const updateFeatureFlag = withAdmin(async ({ req, res }) => {
+  const parts = req.path.split("/");
+  const flagId = parts[parts.length - 1];
+
+  if (!flagId) {
+    fail(res, "Flag-ID er påkrevd");
+    return;
+  }
+
+  const docRef = db.collection("featureFlags").doc(flagId);
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    fail(res, "Feature flag ikke funnet", 404);
+    return;
+  }
+
+  const { key, label, description, enabled, plans } = req.body as {
+    key?: string; label?: string; description?: string; enabled?: boolean; plans?: string[];
+  };
+
+  const updates: Record<string, unknown> = {
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  if (key !== undefined) updates.key = key;
+  if (label !== undefined) updates.label = label;
+  if (description !== undefined) updates.description = description;
+  if (enabled !== undefined) updates.enabled = enabled;
+  if (plans !== undefined) updates.plans = plans;
+
+  await docRef.update(updates);
+  success(res, { id: flagId, ...updates });
+});
+
+// ============================================================
+// Konto-sletting
+// ============================================================
+
+/** DELETE /account — Slett alt brukerdata fra Firestore */
+const deleteAccount = withAuth(async ({ user, res }) => {
+  const batch = db.batch();
+
+  const subRef = db.collection("subscriptions").doc(user.uid);
+  batch.delete(subRef);
+
+  const keysSnap = await db.collection("apiKeys").where("userId", "==", user.uid).get();
+  keysSnap.docs.forEach((d) => batch.delete(d.ref));
+
+  const notesSnap = await db.collection("notes").where("userId", "==", user.uid).get();
+  notesSnap.docs.forEach((d) => batch.delete(d.ref));
+
+  await batch.commit();
+  success(res, { deleted: true });
+});
+
+// ============================================================
 // Ruter — enkel stibasert ruting
 // ============================================================
 
@@ -347,6 +566,16 @@ const routes: Route[] = [
   { method: "GET", path: "/api-keys", handler: listApiKeys },
   { method: "POST", path: "/api-keys", handler: createApiKey },
   // DELETE /api-keys/:id håndteres med startsWith-matching under
+  // Admin
+  { method: "POST", path: "/admin/set-role", handler: setAdminRole },
+  { method: "GET", path: "/admin/users", handler: listAdminUsers },
+  { method: "GET", path: "/admin/stats", handler: getAdminStats },
+  { method: "GET", path: "/admin/feature-flags", handler: listFeatureFlags },
+  { method: "POST", path: "/admin/feature-flags", handler: createFeatureFlag },
+  // GET /admin/users/:uid, POST /admin/users/:uid/disable, DELETE /admin/users/:uid,
+  // PUT /admin/feature-flags/:id — håndteres med startsWith-matching under
+  // Konto
+  { method: "DELETE", path: "/account", handler: deleteAccount },
 ];
 
 // ============================================================
@@ -394,6 +623,28 @@ export const api = onRequest(
     // Sti-parameter-matching: DELETE /api-keys/:id
     if (req.method === "DELETE" && req.path.startsWith("/api-keys/")) {
       await revokeApiKey({ req, res });
+      return;
+    }
+
+    // Admin bruker-ruter: GET/DELETE /admin/users/:uid, POST /admin/users/:uid/disable
+    if (req.path.startsWith("/admin/users/")) {
+      if (req.method === "GET" && !req.path.endsWith("/disable")) {
+        await getAdminUser({ req, res });
+        return;
+      }
+      if (req.method === "POST" && req.path.endsWith("/disable")) {
+        await disableAdminUser({ req, res });
+        return;
+      }
+      if (req.method === "DELETE") {
+        await deleteAdminUser({ req, res });
+        return;
+      }
+    }
+
+    // Admin feature-flag-ruter: PUT /admin/feature-flags/:id
+    if (req.method === "PUT" && req.path.startsWith("/admin/feature-flags/")) {
+      await updateFeatureFlag({ req, res });
       return;
     }
 
