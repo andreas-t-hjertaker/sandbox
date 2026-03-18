@@ -19,20 +19,31 @@ import {
   PanelLeft,
   Menu,
   Cloud,
+  CreditCard,
+  Code,
+  Shield,
 } from "lucide-react";
+import { useAdmin } from "@/hooks/use-admin";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/dokumenter", label: "Dokumenter", icon: FileText },
+  { href: "/dashboard/abonnement", label: "Abonnement", icon: CreditCard },
+  { href: "/dashboard/utvikler", label: "Utvikler", icon: Code },
   { href: "/dashboard/innstillinger", label: "Innstillinger", icon: Settings },
 ];
 
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const pathname = usePathname();
+  const { isAdmin } = useAdmin();
+
+  const allItems = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: Shield }]
+    : navItems;
 
   return (
     <nav className="space-y-1">
-      {navItems.map((item) => {
+      {allItems.map((item) => {
         const isActive =
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -42,10 +53,10 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
             href={item.href}
             onClick={onClick}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
               isActive
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:translate-x-0.5"
             )}
           >
             <item.icon className="h-4 w-4" />
@@ -102,10 +113,15 @@ export function Sidebar() {
 /** Kollapset navigasjon — bare ikoner */
 function CollapsedNav() {
   const pathname = usePathname();
+  const { isAdmin } = useAdmin();
+
+  const allItems = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: Shield }]
+    : navItems;
 
   return (
     <nav className="space-y-1">
-      {navItems.map((item) => {
+      {allItems.map((item) => {
         const isActive =
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href));
