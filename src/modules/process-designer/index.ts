@@ -33,5 +33,8 @@ export {
   ProcessPatchArraySchema,
 } from "./types";
 
+// Komponenter
+export { SplitViewLayout } from "./components/split-view-layout";
+
 // Konstanter
 export { NODE_COLORS, AUTONOMY_LABELS, DEFAULT_LAYOUT_DIRECTION } from "./constants";
