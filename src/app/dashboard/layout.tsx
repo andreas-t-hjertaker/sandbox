@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { AiAssistant } from "@/modules/ai-assistant";
+import { CloudAssistant } from "@/modules/ai-assistant";
 import { OnboardingStepper } from "@/components/onboarding-stepper";
 import { PageTransition } from "@/components/motion";
 
@@ -77,18 +77,20 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <PageTransition>{children}</PageTransition>
         </main>
       </div>
-      <AiAssistant
-        title="ketl assistent"
-        welcomeMessage="Hei! Jeg er din AI-assistent. Spør meg om hva som helst!"
-        contextProvider={() => ({
-          user: user
-            ? { displayName: user.displayName, email: user.email, uid: user.uid }
-            : undefined,
-          appName: "ketl cloud",
-          currentPath: typeof window !== "undefined" ? window.location.pathname : "/dashboard",
-          customContext:
-            "Tilgjengelige tjenester: Firebase Hosting, Firestore, Cloud Storage, Cloud Functions, AI Logic, Analytics.",
-        })}
+      <CloudAssistant
+        config={{
+          title: "ketl assistent",
+          welcomeMessage: "Hei! Jeg er din AI-assistent. Spør meg om hva som helst!",
+          contextProvider: () => ({
+            user: user
+              ? { displayName: user.displayName, email: user.email, uid: user.uid }
+              : undefined,
+            appName: "ketl cloud",
+            currentPath: typeof window !== "undefined" ? window.location.pathname : "/dashboard",
+            customContext:
+              "Tilgjengelige tjenester: Firebase Hosting, Firestore, Cloud Storage, Cloud Functions, AI Logic, Analytics.",
+          }),
+        }}
       />
       <OnboardingStepper />
     </div>
