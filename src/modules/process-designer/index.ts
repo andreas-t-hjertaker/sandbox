@@ -49,5 +49,9 @@ export {
 } from "./lib/llm-orchestrator";
 export type { ConversationPhase, LLMResponse } from "./lib/llm-orchestrator";
 
+// BPMN Validering
+export { validateProcess } from "./lib/bpmn-validator";
+export type { ValidationResult, ValidationIssue, ValidationSeverity } from "./lib/bpmn-validator";
+
 // Konstanter
 export { NODE_COLORS, AUTONOMY_LABELS, DEFAULT_LAYOUT_DIRECTION } from "./constants";
