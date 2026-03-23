@@ -35,6 +35,7 @@ export {
 
 // Komponenter
 export { SplitViewLayout } from "./components/split-view-layout";
+export { DesignerChat } from "./components/designer-chat";
 
 // LLM Orchestrator
 export {
