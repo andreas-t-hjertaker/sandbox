@@ -22,6 +22,7 @@ import {
   CreditCard,
   Code,
   Shield,
+  Workflow,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 
@@ -29,6 +30,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/dokumenter", label: "Dokumenter", icon: FileText },
   { href: "/dashboard/abonnement", label: "Abonnement", icon: CreditCard },
+  { href: "/dashboard/prosessdesigner", label: "Prosessdesigner", icon: Workflow },
   { href: "/dashboard/utvikler", label: "Utvikler", icon: Code },
   { href: "/dashboard/innstillinger", label: "Innstillinger", icon: Settings },
 ];
