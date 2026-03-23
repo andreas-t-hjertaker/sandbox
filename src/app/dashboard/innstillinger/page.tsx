@@ -273,7 +273,7 @@ export default function InnstillingerPage() {
               <Button
                 type="submit"
                 disabled={profileForm.formState.isSubmitting}
-                data-cloud-id="lagre-profil" data-cloud-label="Lagre profil" data-cloud-type="action"
+                data-cloud-id="lagre-profil" data-cloud-label="Lagre profil" data-cloud-type="action" data-cloud-hint="Lagrer endringer i visningsnavn"
               >
                 {profileForm.formState.isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

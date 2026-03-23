@@ -82,7 +82,7 @@ export default function UtviklerPage() {
             Administrer API-nøkler for programmatisk tilgang.
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} disabled={showForm}>
+        <Button onClick={() => setShowForm(true)} disabled={showForm} data-cloud-id="opprett-api-nokkel" data-cloud-label="Opprett API-nøkkel" data-cloud-type="action" data-cloud-hint="Opprett ny API-nøkkel for programmatisk tilgang">
           <Plus className="mr-2 h-4 w-4" />
           Opprett ny nøkkel
         </Button>
@@ -171,7 +171,7 @@ export default function UtviklerPage() {
       )}
 
       {/* Eksisterende nøkler */}
-      <Card>
+      <Card data-cloud-id="api-nokler-tabell" data-cloud-label="API-nøkler" data-cloud-type="section" data-cloud-hint="Liste over opprettede API-nøkler med status og tilbakekalling">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code className="h-5 w-5" />

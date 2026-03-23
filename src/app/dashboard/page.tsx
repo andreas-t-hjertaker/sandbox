@@ -202,10 +202,10 @@ export default function DashboardPage() {
       </SlideIn>
 
       {/* Hurtigstatistikk */}
-      <StaggerList className="grid gap-4 sm:grid-cols-3" staggerDelay={0.08} data-cloud-id="kpi-oversikt" data-cloud-label="Hurtigstatistikk" data-cloud-type="section">
+      <StaggerList className="grid gap-4 sm:grid-cols-3" staggerDelay={0.08} data-cloud-id="kpi-oversikt" data-cloud-label="Hurtigstatistikk" data-cloud-type="section" data-cloud-hint="Nøkkeltall for brukere, dokumenter og API-kall">
         {stats.map((stat) => (
           <StaggerItem key={stat.label}>
-            <Card data-cloud-id={`kpi-${stat.label.toLowerCase()}`} data-cloud-label={stat.label} data-cloud-type="kpi">
+            <Card data-cloud-id={`kpi-${stat.label.toLowerCase()}`} data-cloud-label={stat.label} data-cloud-type="kpi" data-cloud-hint={`Viser antall ${stat.label.toLowerCase()} i systemet`}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardDescription>{stat.label}</CardDescription>
                 <stat.icon className="h-4 w-4 text-muted-foreground" />
@@ -229,7 +229,7 @@ export default function DashboardPage() {
       {/* Tjenestestatus */}
       <div>
         <SlideIn direction="up" delay={0.1}>
-          <div className="mb-4 flex items-center gap-3" data-cloud-id="tjenestestatus-header" data-cloud-label="Tjenestestatus" data-cloud-type="section">
+          <div className="mb-4 flex items-center gap-3" data-cloud-id="tjenestestatus-header" data-cloud-label="Tjenestestatus" data-cloud-type="section" data-cloud-hint="Overvåkning av Firebase-tjenester og backend-status">
             <h2 className="text-lg font-semibold">Tjenestestatus</h2>
             <Badge variant="outline" className="font-mono text-xs">
               {checking ? (
@@ -255,7 +255,7 @@ export default function DashboardPage() {
         >
           {services.map((s) => (
             <StaggerItem key={s.name}>
-              <Card className="border-border/50 bg-card/50">
+              <Card className="border-border/50 bg-card/50" data-cloud-id={`tjeneste-${s.name.toLowerCase().replace(/\s+/g, "-")}`} data-cloud-label={s.name} data-cloud-type="status" data-cloud-hint={s.description}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <s.icon className="h-5 w-5 text-muted-foreground" />
@@ -284,7 +284,7 @@ export default function DashboardPage() {
       {/* API-endepunkter */}
       <div>
         <SlideIn direction="up" delay={0.1}>
-          <h2 className="mb-4 text-lg font-semibold" data-cloud-id="api-endepunkter" data-cloud-label="API-endepunkter" data-cloud-type="section">API-endepunkter</h2>
+          <h2 className="mb-4 text-lg font-semibold" data-cloud-id="api-endepunkter" data-cloud-label="API-endepunkter" data-cloud-type="section" data-cloud-hint="Tilgjengelige REST API-endepunkter med URL og beskrivelse">API-endepunkter</h2>
         </SlideIn>
         <StaggerList className="space-y-3" staggerDelay={0.05} initialDelay={0.15}>
           <StaggerItem>
@@ -359,6 +359,10 @@ function Endpoint({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
+      data-cloud-id={`endpoint-${method.toLowerCase()}-${path.replace(/\//g, "-").slice(1)}`}
+      data-cloud-label={`${method} ${path}`}
+      data-cloud-type="action"
+      data-cloud-hint={description}
       className="flex items-center gap-4 rounded-lg border border-border/50 bg-card/50 px-4 py-3 transition-all hover:bg-accent/50 hover:shadow-sm active:scale-[0.99]"
     >
       <Badge variant="secondary" className="font-mono text-xs">

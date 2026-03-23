@@ -67,9 +67,9 @@ export default function AdminPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-cloud-id="admin-oversikt" data-cloud-label="Admin-statistikk" data-cloud-type="section" data-cloud-hint="Nøkkeltall for plattformen">
         {cards.map((card) => (
-          <Card key={card.title}>
+          <Card key={card.title} data-cloud-id={`admin-kpi-${card.title.toLowerCase().replace(/\s+/g, "-")}`} data-cloud-label={card.title} data-cloud-type="kpi" data-cloud-hint={card.description}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">
                 {card.title}

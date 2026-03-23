@@ -98,7 +98,7 @@ export function OnboardingStepper() {
   const initials = (displayName || user?.email || "?").charAt(0).toUpperCase();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm" data-cloud-id="onboarding-overlay" data-cloud-label="Onboarding" data-cloud-type="modal" data-cloud-hint="Veiviser for nye brukere — sett opp profil og utforsk funksjoner">
       <Card className="mx-4 w-full max-w-lg">
         {/* Fremdriftsprikker */}
         <div className="flex justify-center gap-2 pt-6">
@@ -255,7 +255,7 @@ export function OnboardingStepper() {
 
         {/* Navigasjon */}
         <CardContent className="flex items-center justify-between border-t pt-4">
-          <Button variant="ghost" size="sm" onClick={handleSkip}>
+          <Button variant="ghost" size="sm" onClick={handleSkip} data-cloud-id="onboarding-hopp-over" data-cloud-label="Hopp over onboarding" data-cloud-type="action">
             Hopp over
           </Button>
           <div className="flex gap-2">
@@ -264,16 +264,17 @@ export function OnboardingStepper() {
                 variant="outline"
                 size="sm"
                 onClick={() => setStep((s) => s - 1)}
+                data-cloud-id="onboarding-forrige" data-cloud-label="Forrige steg" data-cloud-type="action"
               >
                 Forrige
               </Button>
             )}
             {step < TOTAL_STEPS - 1 ? (
-              <Button size="sm" onClick={() => setStep((s) => s + 1)}>
+              <Button size="sm" onClick={() => setStep((s) => s + 1)} data-cloud-id="onboarding-neste" data-cloud-label="Neste steg" data-cloud-type="action">
                 Neste
               </Button>
             ) : (
-              <Button size="sm" onClick={handleComplete}>
+              <Button size="sm" onClick={handleComplete} data-cloud-id="onboarding-fullfor" data-cloud-label="Fullfør onboarding" data-cloud-type="action">
                 Kom i gang
               </Button>
             )}
