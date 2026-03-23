@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { CloudProvider, useCloud } from "../context/cloud-provider";
@@ -22,6 +22,15 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
     useCloud();
   const { elements, getElement } = useDomScanner();
   const pathname = usePathname();
+  const cloudRef = useRef<HTMLDivElement>(null);
+  const [cloudRect, setCloudRect] = useState<DOMRect | undefined>();
+
+  // Oppdater cloudRect når bubble vises
+  useEffect(() => {
+    if (state.bubble && cloudRef.current) {
+      setCloudRect(cloudRef.current.getBoundingClientRect());
+    }
+  }, [state.bubble]);
 
   // Reset ved route-endring
   useEffect(() => {
@@ -121,6 +130,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
               variant={state.bubble.variant}
               autoHide={state.bubble.autoHide}
               onDismiss={dismiss}
+              cloudRect={cloudRect}
               actions={
                 state.mode === "touring" && state.tour
                   ? [
@@ -152,6 +162,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
               />
             ) : (
               <motion.div
+                ref={cloudRef}
                 key="cloud-avatar"
                 layoutId="cloud-morph"
                 initial={false}
