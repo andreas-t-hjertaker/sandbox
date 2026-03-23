@@ -36,5 +36,16 @@ export {
 // Komponenter
 export { SplitViewLayout } from "./components/split-view-layout";
 
+// LLM Orchestrator
+export {
+  buildDesignerSystemPrompt,
+  parseLLMResponse,
+  applyLLMResponse,
+  detectPhase,
+  PHASE_LABELS,
+  LLMResponseSchema,
+} from "./lib/llm-orchestrator";
+export type { ConversationPhase, LLMResponse } from "./lib/llm-orchestrator";
+
 // Konstanter
 export { NODE_COLORS, AUTONOMY_LABELS, DEFAULT_LAYOUT_DIRECTION } from "./constants";
