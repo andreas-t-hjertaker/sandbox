@@ -1,5 +1,11 @@
 export { AiAssistant } from "./components/ai-assistant";
 export { CloudAvatar } from "./components/cloud-avatar";
+export { CloudAssistant } from "./components/cloud-assistant";
+export { SpeechBubble } from "./components/speech-bubble";
+export { Spotlight } from "./components/spotlight";
+export { CloudProvider, useCloud } from "./context/cloud-provider";
 export { useChatSession as useAiAssistant } from "./hooks/use-chat";
 export { useDomScanner } from "./hooks/use-dom-scanner";
+export { useCloudActions } from "./hooks/use-cloud-actions";
 export type { ChatMessage, ChatConfig, AssistantContext, ScannedElement } from "./types";
+export type { CloudState, CloudMode, TourStep } from "./context/cloud-reducer";
