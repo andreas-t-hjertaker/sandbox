@@ -95,7 +95,7 @@ export default function FeatureFlagsPage() {
             Kontroller funksjoner og tilgjengelighet per plan.
           </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={() => setShowForm(!showForm)} data-cloud-id="opprett-flagg" data-cloud-label="Opprett feature flag" data-cloud-type="action">
           <Plus className="mr-2 h-4 w-4" />
           Nytt flagg
         </Button>
@@ -161,7 +161,7 @@ export default function FeatureFlagsPage() {
         </Card>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-3" data-cloud-id="flagg-liste" data-cloud-label="Feature flag-liste" data-cloud-type="section">
         {flags.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">

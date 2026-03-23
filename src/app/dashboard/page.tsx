@@ -202,10 +202,10 @@ export default function DashboardPage() {
       </SlideIn>
 
       {/* Hurtigstatistikk */}
-      <StaggerList className="grid gap-4 sm:grid-cols-3" staggerDelay={0.08}>
+      <StaggerList className="grid gap-4 sm:grid-cols-3" staggerDelay={0.08} data-cloud-id="kpi-oversikt" data-cloud-label="Hurtigstatistikk" data-cloud-type="section">
         {stats.map((stat) => (
           <StaggerItem key={stat.label}>
-            <Card>
+            <Card data-cloud-id={`kpi-${stat.label.toLowerCase()}`} data-cloud-label={stat.label} data-cloud-type="kpi">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardDescription>{stat.label}</CardDescription>
                 <stat.icon className="h-4 w-4 text-muted-foreground" />
@@ -229,7 +229,7 @@ export default function DashboardPage() {
       {/* Tjenestestatus */}
       <div>
         <SlideIn direction="up" delay={0.1}>
-          <div className="mb-4 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3" data-cloud-id="tjenestestatus-header" data-cloud-label="Tjenestestatus" data-cloud-type="section">
             <h2 className="text-lg font-semibold">Tjenestestatus</h2>
             <Badge variant="outline" className="font-mono text-xs">
               {checking ? (
@@ -284,7 +284,7 @@ export default function DashboardPage() {
       {/* API-endepunkter */}
       <div>
         <SlideIn direction="up" delay={0.1}>
-          <h2 className="mb-4 text-lg font-semibold">API-endepunkter</h2>
+          <h2 className="mb-4 text-lg font-semibold" data-cloud-id="api-endepunkter" data-cloud-label="API-endepunkter" data-cloud-type="section">API-endepunkter</h2>
         </SlideIn>
         <StaggerList className="space-y-3" staggerDelay={0.05} initialDelay={0.15}>
           <StaggerItem>

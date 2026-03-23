@@ -22,3 +22,14 @@ export type ChatConfig = {
   title?: string;
   position?: "bottom-right" | "bottom-left";
 };
+
+/** Et element oppdaget av DOM Scanner */
+export type ScannedElement = {
+  id: string;
+  label: string;
+  type?: string;
+  hint?: string;
+  rect: DOMRect;
+  visible: boolean;
+  element: HTMLElement;
+};

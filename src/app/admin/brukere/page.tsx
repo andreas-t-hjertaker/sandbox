@@ -179,20 +179,22 @@ export default function BrukerePage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div data-cloud-id="brukere-header" data-cloud-label="Brukeradministrasjon" data-cloud-type="section">
         <h1 className="text-2xl font-bold tracking-tight">Brukere</h1>
         <p className="text-muted-foreground">
           Administrer brukere, roller og tilganger.
         </p>
       </div>
 
-      <DataTable
-        data={users as unknown as Record<string, unknown>[]}
-        columns={columns as unknown as ColumnDef<Record<string, unknown>>[]}
-        searchable
-        searchKey="email"
-        pageSize={10}
-      />
+      <div data-cloud-id="brukere-tabell" data-cloud-label="Brukertabell" data-cloud-type="table" data-cloud-hint="Tabell med alle brukere, roller og status">
+        <DataTable
+          data={users as unknown as Record<string, unknown>[]}
+          columns={columns as unknown as ColumnDef<Record<string, unknown>>[]}
+          searchable
+          searchKey="email"
+          pageSize={10}
+        />
+      </div>
     </div>
   );
 }

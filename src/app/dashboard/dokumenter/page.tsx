@@ -50,20 +50,22 @@ const columns: ColumnDef<Dokument>[] = [
 export default function DokumenterPage() {
   return (
     <div className="space-y-6">
-      <div>
+      <div data-cloud-id="dokumenter-header" data-cloud-label="Dokumentoversikt" data-cloud-type="section">
         <h1 className="text-2xl font-bold tracking-tight">Dokumenter</h1>
         <p className="text-muted-foreground">
           Oversikt over alle prosjektdokumenter.
         </p>
       </div>
 
-      <DataTable
-        data={mockData}
-        columns={columns}
-        searchable
-        searchKey="navn"
-        pageSize={8}
-      />
+      <div data-cloud-id="dokumenter-tabell" data-cloud-label="Dokumenttabell" data-cloud-type="table" data-cloud-hint="Søkbar tabell med alle prosjektdokumenter">
+        <DataTable
+          data={mockData}
+          columns={columns}
+          searchable
+          searchKey="navn"
+          pageSize={8}
+        />
+      </div>
     </div>
   );
 }

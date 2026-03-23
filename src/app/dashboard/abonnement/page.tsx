@@ -63,8 +63,8 @@ export default function AbonnementPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6" data-cloud-id="abonnement-side" data-cloud-label="Abonnementadministrasjon" data-cloud-type="page">
+      <div data-cloud-id="abonnement-header" data-cloud-label="Abonnement overskrift" data-cloud-type="section">
         <h1 className="text-2xl font-bold tracking-tight">Abonnement</h1>
         <p className="text-muted-foreground">
           Administrer ditt abonnement og fakturering.
@@ -73,7 +73,7 @@ export default function AbonnementPage() {
 
       {/* Aktivt abonnement */}
       {subscription && subscription.status !== "none" ? (
-        <Card>
+        <Card data-cloud-id="abonnement-aktivt" data-cloud-label="Aktivt abonnement" data-cloud-type="section" data-cloud-hint="Viser gjeldende plan, status og faktureringsdetaljer">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -109,6 +109,7 @@ export default function AbonnementPage() {
               onClick={openPortal}
               disabled={portalLoading}
               variant="outline"
+              data-cloud-id="administrer-stripe" data-cloud-label="Åpne Stripe kundeportal" data-cloud-type="action"
             >
               {portalLoading ? (
                 <Spinner className="mr-2 h-4 w-4" />
@@ -121,7 +122,7 @@ export default function AbonnementPage() {
         </Card>
       ) : (
         /* Ingen abonnement */
-        <Card>
+        <Card data-cloud-id="abonnement-ingen" data-cloud-label="Ingen abonnement" data-cloud-type="section" data-cloud-hint="Vises når bruker ikke har noen betalt plan">
           <CardHeader>
             <CardTitle>Ingen aktivt abonnement</CardTitle>
             <CardDescription>
@@ -131,7 +132,7 @@ export default function AbonnementPage() {
           </CardHeader>
           <CardFooter>
             <Link href="/pricing">
-              <Button>Se priser og oppgrader</Button>
+              <Button data-cloud-id="oppgrader-knapp" data-cloud-label="Se priser og oppgrader" data-cloud-type="action">Se priser og oppgrader</Button>
             </Link>
           </CardFooter>
         </Card>
@@ -139,7 +140,7 @@ export default function AbonnementPage() {
 
       {/* Advarsel ved forfalt betaling */}
       {isPastDue && (
-        <Card className="border-destructive">
+        <Card className="border-destructive" data-cloud-id="betalingsproblem-kort" data-cloud-label="Betalingsproblem" data-cloud-type="section" data-cloud-hint="Advarsel om forfalt betaling">
           <CardHeader>
             <CardTitle className="text-destructive">Betalingsproblem</CardTitle>
             <CardDescription>
@@ -148,7 +149,7 @@ export default function AbonnementPage() {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button variant="destructive" onClick={openPortal} disabled={portalLoading}>
+            <Button variant="destructive" onClick={openPortal} disabled={portalLoading} data-cloud-id="oppdater-betaling" data-cloud-label="Oppdater betaling" data-cloud-type="action">
               Oppdater betaling
             </Button>
           </CardFooter>
