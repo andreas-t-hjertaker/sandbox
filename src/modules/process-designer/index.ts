@@ -95,7 +95,8 @@ export { addToDLQ, getDLQEntries, retryDLQEntry, escalateDLQEntry, resolveDLQEnt
 export { getEffectiveRules, saveRules, rulesToPromptSection } from "./lib/process-rules";
 
 // Telemetri
-export { trackLLMCall, trackAgentRun, startTelemetry, aggregateProcessMetrics } from "./lib/telemetry";
+export { trackLLMCall, trackAgentRun, startTelemetry, aggregateProcessMetrics, setTelemetryExporter, useOtelExporter } from "./lib/telemetry";
+export type { TelemetryExporter } from "./lib/telemetry";
 
 // Idempotens
 export { executeIdempotent, generateIdempotencyKey } from "./lib/idempotent-handler";

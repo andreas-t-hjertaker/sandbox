@@ -52,12 +52,95 @@ export function trackAgentRun(metrics: AgentRunMetrics): void {
   }
 }
 
-/** Flush metrics til backend (stub — implementeres med Langfuse/OTEL) */
+export type TelemetryExporter = (
+  batch: (LLMCallMetrics | AgentRunMetrics)[]
+) => Promise<void>;
+
+/** Firestore-basert exporter (standard) */
+async function firestoreExporter(
+  batch: (LLMCallMetrics | AgentRunMetrics)[]
+): Promise<void> {
+  const { addDocument } = await import("@/lib/firebase/firestore");
+  const promises = batch.map((entry) => {
+    const kind = "runId" in entry ? "agent_run" : "llm_call";
+    return addDocument("telemetryEvents", {
+      kind,
+      ...entry,
+      timestamp: entry.timestamp.toISOString(),
+      flushedAt: new Date().toISOString(),
+    });
+  });
+  await Promise.all(promises);
+}
+
+/** OpenTelemetry-kompatibel HTTP exporter */
+async function otelHttpExporter(
+  batch: (LLMCallMetrics | AgentRunMetrics)[],
+  endpoint: string
+): Promise<void> {
+  const spans = batch.map((entry) => {
+    const kind = "runId" in entry ? "agent_run" : "llm_call";
+    const id = "runId" in entry ? entry.runId : entry.callId;
+    return {
+      traceId: id,
+      spanId: id,
+      name: kind,
+      kind: 1, // SPAN_KIND_INTERNAL
+      startTimeUnixNano: entry.timestamp.getTime() * 1_000_000,
+      endTimeUnixNano:
+        (entry.timestamp.getTime() +
+          ("totalDurationMs" in entry ? entry.totalDurationMs : entry.latencyMs)) *
+        1_000_000,
+      attributes: Object.entries(entry)
+        .filter(([, v]) => typeof v !== "object")
+        .map(([k, v]) => ({
+          key: k,
+          value:
+            typeof v === "number"
+              ? { intValue: v }
+              : { stringValue: String(v) },
+        })),
+    };
+  });
+
+  await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      resourceSpans: [
+        {
+          resource: { attributes: [{ key: "service.name", value: { stringValue: "process-designer" } }] },
+          scopeSpans: [{ spans }],
+        },
+      ],
+    }),
+  });
+}
+
+let activeExporter: TelemetryExporter = firestoreExporter;
+
+/** Konfigurer telemetri-exporter */
+export function setTelemetryExporter(exporter: TelemetryExporter): void {
+  activeExporter = exporter;
+}
+
+/** Bruk OpenTelemetry HTTP exporter */
+export function useOtelExporter(endpoint: string): void {
+  activeExporter = (batch) => otelHttpExporter(batch, endpoint);
+}
+
+/** Flush metrics til konfigurert backend */
 async function flushMetrics(): Promise<void> {
   if (metricsBuffer.length === 0) return;
   const batch = metricsBuffer.splice(0, metricsBuffer.length);
-  // TODO: Send til Langfuse eller OpenTelemetry collector
-  console.debug(`[telemetry] Flushed ${batch.length} metrics`);
+  try {
+    await activeExporter(batch);
+    console.debug(`[telemetry] Flushed ${batch.length} metrics`);
+  } catch (err) {
+    // Re-legg batch tilbake ved feil slik at vi ikke mister data
+    metricsBuffer.unshift(...batch);
+    console.warn(`[telemetry] Flush feilet, ${batch.length} metrics beholdt i buffer`, err);
+  }
 }
 
 /** Start periodisk flushing */
