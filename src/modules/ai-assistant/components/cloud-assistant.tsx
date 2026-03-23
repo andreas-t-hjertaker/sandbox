@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { CloudProvider, useCloud } from "../context/cloud-provider";
@@ -9,6 +9,8 @@ import { CloudChatPanel } from "./cloud-chat-panel";
 import { SpeechBubble } from "./speech-bubble";
 import { Spotlight } from "./spotlight";
 import { useDomScanner } from "../hooks/use-dom-scanner";
+import { useProactiveTriggers } from "../hooks/use-proactive-triggers";
+import type { CloudAction } from "../lib/cloud-actions";
 import type { ChatConfig } from "../types";
 
 type CloudAssistantProps = {
@@ -16,9 +18,9 @@ type CloudAssistantProps = {
 };
 
 function CloudAssistantInner({ config }: CloudAssistantProps) {
-  const { state, dispatch, dismiss, toggleChat, nextTourStep, cancelTour } =
+  const { state, dispatch, dismiss, navigateTo, speak, startTour, toggleChat, nextTourStep, cancelTour } =
     useCloud();
-  const { getElement } = useDomScanner();
+  const { elements, getElement } = useDomScanner();
   const pathname = usePathname();
 
   // Reset ved route-endring
@@ -41,6 +43,46 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
   const handleDragEnd = () => {
     dispatch({ type: "DRAG_END" });
   };
+
+  // Håndter cloud actions fra LLM-responser
+  const handleActions = useCallback(
+    (actions: CloudAction[]) => {
+      for (const action of actions) {
+        switch (action.type) {
+          case "navigate": {
+            const targetExists = elements.some((el) => el.id === action.targetId);
+            if (targetExists) {
+              navigateTo(action.targetId, action.message, action.highlight);
+            } else {
+              speak(action.message, "info");
+            }
+            break;
+          }
+          case "speak":
+            speak(action.message, action.variant, action.autoHide);
+            break;
+          case "data":
+            dispatch({ type: "SHOW_DATA", message: action.title });
+            break;
+          case "tour":
+            startTour(action.steps);
+            break;
+          case "idle":
+            break;
+        }
+      }
+    },
+    [elements, navigateTo, speak, startTour, dispatch]
+  );
+
+  // Proaktive triggere
+  useProactiveTriggers({
+    elements,
+    enabled: !state.chatOpen && state.mode === "idle",
+    onNavigate: navigateTo,
+    onSpeak: speak,
+    onTour: (steps) => startTour(steps),
+  });
 
   // Beregn target-posisjon for navigasjon
   const targetPosition =
@@ -104,6 +146,8 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
               <CloudChatPanel
                 key="chat-panel"
                 config={config}
+                elements={elements}
+                onActions={handleActions}
                 onClose={toggleChat}
               />
             ) : (
@@ -146,6 +190,8 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
  *
  * Wrapper hele appen med CloudProvider og rendrer Cloud Avatar, Speech Bubble og Spotlight.
  * Klikk på skyen morphes til chat-panel med smooth animasjon.
+ * LLM-responser parses for cloud-action blokker som dispatches til CloudOrchestrator.
+ * Proaktive triggere aktivert for tom side og inaktivitet.
  */
 export function CloudAssistant(props: CloudAssistantProps) {
   return (

@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { getModel } from "@/lib/firebase/ai";
 import { generateId } from "@/lib/utils";
 import { buildSystemPrompt } from "../lib/system-prompt";
+import { parseCloudActions, type CloudAction } from "../lib/cloud-actions";
 import type { ChatMessage, ChatConfig, AssistantContext } from "../types";
 
 type ChatSession = {
@@ -12,9 +13,15 @@ type ChatSession = {
   }>;
 };
 
+type ChatSessionOptions = {
+  elements?: { id: string; label: string; type?: string; hint?: string }[];
+  onActions?: (actions: CloudAction[]) => void;
+};
+
 export function useChatSession(
   context: AssistantContext,
-  config?: ChatConfig
+  config?: ChatConfig,
+  options?: ChatSessionOptions
 ) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -25,7 +32,7 @@ export function useChatSession(
   function createSession() {
     const systemPrompt = config?.systemPrompt
       ? config.systemPrompt
-      : buildSystemPrompt(context, undefined);
+      : buildSystemPrompt(context, undefined, options?.elements);
 
     const model = getModel(config?.modelName);
     const session = model.startChat({
@@ -96,10 +103,18 @@ export function useChatSession(
           }
         }
 
-        // Marker streaming som ferdig
+        // Parse cloud actions fra ferdig respons
+        const { text: cleanText, actions } = parseCloudActions(fullText);
+        if (actions.length > 0) {
+          options?.onActions?.(actions);
+        }
+
+        // Marker streaming som ferdig, vis ren tekst uten action-blokker
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantId ? { ...m, streaming: false } : m
+            m.id === assistantId
+              ? { ...m, content: cleanText || fullText, streaming: false }
+              : m
           )
         );
       } catch (err) {

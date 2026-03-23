@@ -10,14 +10,17 @@ import { getDefaultContext } from "../lib/context";
 import { useChatSession } from "../hooks/use-chat";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
-import type { ChatConfig } from "../types";
+import type { CloudAction } from "../lib/cloud-actions";
+import type { ChatConfig, ScannedElement } from "../types";
 
 type CloudChatPanelProps = {
   config?: ChatConfig;
+  elements?: ScannedElement[];
+  onActions?: (actions: CloudAction[]) => void;
   onClose: () => void;
 };
 
-export function CloudChatPanel({ config, onClose }: CloudChatPanelProps) {
+export function CloudChatPanel({ config, elements, onActions, onClose }: CloudChatPanelProps) {
   const { user } = useAuth();
   const pathname = usePathname();
 
@@ -28,8 +31,13 @@ export function CloudChatPanel({ config, onClose }: CloudChatPanelProps) {
     return getDefaultContext(user, pathname);
   }, [user, pathname, config]);
 
+  const elementsSummary = useMemo(
+    () => elements?.map(({ id, label, type, hint }) => ({ id, label, type, hint })),
+    [elements]
+  );
+
   const { messages, sendMessage, clearMessages, isStreaming } =
-    useChatSession(context, config);
+    useChatSession(context, config, { elements: elementsSummary, onActions });
 
   const title = config?.title || "AI-assistent";
   const welcomeMessage =
