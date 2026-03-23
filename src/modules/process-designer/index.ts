@@ -14,7 +14,24 @@ export type {
   ProcessDefinition,
   ProcessPatch,
   ProcessMetadata,
-} from "./types/process-types";
+  Position,
+  AutonomyLevel,
+} from "./types";
+
+// Zod-skjemaer
+export {
+  BPMNNodeTypeSchema,
+  PositionSchema,
+  AutonomyLevelSchema,
+  AgentConfigSchema,
+  MCPToolConfigSchema,
+  ProcessNodeSchema,
+  ProcessEdgeSchema,
+  ProcessMetadataSchema,
+  ProcessDefinitionSchema,
+  ProcessPatchSchema,
+  ProcessPatchArraySchema,
+} from "./types";
 
 // Konstanter
 export { NODE_COLORS, AUTONOMY_LABELS, DEFAULT_LAYOUT_DIRECTION } from "./constants";
