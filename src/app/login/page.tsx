@@ -108,7 +108,8 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await signInGoogle();
-      router.replace("/dashboard");
+      // signInWithRedirect navigerer brukeren bort — onAuthStateChanged
+      // håndterer redirect-resultatet automatisk når brukeren kommer tilbake
     } catch {
       setError("Kunne ikke logge inn med Google.");
       setSubmitting(false);

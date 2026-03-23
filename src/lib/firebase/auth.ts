@@ -3,7 +3,8 @@
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -25,9 +26,14 @@ const googleProvider = new GoogleAuthProvider();
 
 // ─── Google ──────────────────────────────────────────────
 
-/** Logg inn med Google-popup */
+/** Logg inn med Google via redirect (unngår popup-blokkering) */
 export async function signInWithGoogle() {
-  return signInWithPopup(auth, googleProvider);
+  return signInWithRedirect(auth, googleProvider);
+}
+
+/** Hent resultat etter Google redirect-innlogging */
+export async function getGoogleRedirectResult() {
+  return getRedirectResult(auth);
 }
 
 // ─── E-post / passord ────────────────────────────────────
