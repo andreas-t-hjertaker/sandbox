@@ -7,5 +7,8 @@ export { CloudProvider, useCloud } from "./context/cloud-provider";
 export { useChatSession as useAiAssistant } from "./hooks/use-chat";
 export { useDomScanner } from "./hooks/use-dom-scanner";
 export { useCloudActions } from "./hooks/use-cloud-actions";
+export { useProactiveTriggers } from "./hooks/use-proactive-triggers";
+export { defaultTriggers } from "./lib/proactive-triggers";
 export type { ChatMessage, ChatConfig, AssistantContext, ScannedElement } from "./types";
 export type { CloudState, CloudMode, TourStep } from "./context/cloud-reducer";
+export type { ProactiveTrigger, TriggerContext } from "./lib/proactive-triggers";
