@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { CloudProvider, useCloud } from "../context/cloud-provider";
 import { CloudAvatar } from "./cloud-avatar";
+import { CloudChatPanel } from "./cloud-chat-panel";
 import { SpeechBubble } from "./speech-bubble";
 import { Spotlight } from "./spotlight";
 import { useDomScanner } from "../hooks/use-dom-scanner";
@@ -17,7 +18,7 @@ type CloudAssistantProps = {
 function CloudAssistantInner({ config }: CloudAssistantProps) {
   const { state, dispatch, dismiss, toggleChat, nextTourStep, cancelTour } =
     useCloud();
-  const { elements, getElement } = useDomScanner();
+  const { getElement } = useDomScanner();
   const pathname = usePathname();
 
   // Reset ved route-endring
@@ -68,11 +69,11 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
           )}
       </AnimatePresence>
 
-      {/* Cloud Avatar wrapper med bubble */}
-      <div className="fixed right-6 bottom-6 z-[9999]">
-        {/* Snakkeboble */}
+      {/* Cloud Avatar + Chat morph container */}
+      <div className="fixed right-6 bottom-6 z-[9999] flex flex-col items-end">
+        {/* Snakkeboble (bare når chat er lukket) */}
         <AnimatePresence>
-          {state.bubble && state.mode !== "dragging" && (
+          {state.bubble && state.mode !== "dragging" && !state.chatOpen && (
             <SpeechBubble
               content={state.bubble.message}
               variant={state.bubble.variant}
@@ -97,22 +98,44 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
           )}
         </AnimatePresence>
 
-        <CloudAvatar
-          state={
-            state.mode === "navigating"
-              ? "navigating"
-              : state.mode === "dragging"
-                ? "idle"
-                : state.chatOpen
-                  ? "chatOpen"
-                  : "idle"
-          }
-          targetPosition={targetPosition}
-          hasNotification={false}
-          onClick={handleCloudClick}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        />
+        <LayoutGroup>
+          <AnimatePresence mode="wait">
+            {state.chatOpen ? (
+              <CloudChatPanel
+                key="chat-panel"
+                config={config}
+                onClose={toggleChat}
+              />
+            ) : (
+              <motion.div
+                key="cloud-avatar"
+                layoutId="cloud-morph"
+                initial={false}
+                animate={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              >
+                <CloudAvatar
+                  state={
+                    state.mode === "navigating"
+                      ? "navigating"
+                      : state.mode === "dragging"
+                        ? "idle"
+                        : "idle"
+                  }
+                  targetPosition={targetPosition}
+                  hasNotification={false}
+                  onClick={handleCloudClick}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </LayoutGroup>
       </div>
     </>
   );
@@ -122,6 +145,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
  * CloudAssistant — sammensatt komponent som koordinerer alle sky-delene.
  *
  * Wrapper hele appen med CloudProvider og rendrer Cloud Avatar, Speech Bubble og Spotlight.
+ * Klikk på skyen morphes til chat-panel med smooth animasjon.
  */
 export function CloudAssistant(props: CloudAssistantProps) {
   return (

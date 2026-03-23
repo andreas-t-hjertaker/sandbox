@@ -2,6 +2,7 @@ export { AiAssistant } from "./components/ai-assistant";
 export { CloudAvatar } from "./components/cloud-avatar";
 export { CloudAssistant } from "./components/cloud-assistant";
 export { SpeechBubble } from "./components/speech-bubble";
+export { CloudChatPanel } from "./components/cloud-chat-panel";
 export { Spotlight } from "./components/spotlight";
 export { CloudProvider, useCloud } from "./context/cloud-provider";
 export { useChatSession as useAiAssistant } from "./hooks/use-chat";

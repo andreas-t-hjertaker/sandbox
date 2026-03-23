@@ -110,8 +110,7 @@ export function CloudAvatar({
   return (
     <div
       ref={containerRef}
-      className="fixed right-6 bottom-6 z-[9999]"
-      style={{ transform: `translate(${homePosition.x}px, ${homePosition.y}px)` }}
+      className="relative"
     >
       <motion.div
         drag
