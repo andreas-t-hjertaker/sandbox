@@ -58,7 +58,7 @@ export const LLMResponseSchema = z.object({
           timeout: z.number().default(30000),
           humanApprovalRequired: z.boolean().default(false),
         }).optional(),
-        metadata: z.record(z.unknown()).default({}),
+        metadata: z.record(z.string(), z.unknown()).default({}),
       })
     )
     .optional(),

@@ -48,7 +48,7 @@ export const AgentConfigSchema = z.object({
 export const MCPToolConfigSchema = z.object({
   serverId: z.string().min(1),
   toolName: z.string().min(1),
-  parameters: z.record(z.unknown()),
+  parameters: z.record(z.string(), z.unknown()),
   authConfig: z
     .object({
       type: z.enum(["api-key", "oauth", "bearer"]),
@@ -65,7 +65,7 @@ export const ProcessNodeSchema = z.object({
   position: PositionSchema,
   agentConfig: AgentConfigSchema.optional(),
   mcpConfig: MCPToolConfigSchema.optional(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
 /** En kant mellom noder */
