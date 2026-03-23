@@ -206,7 +206,7 @@ export default function InnstillingerPage() {
       </div>
 
       {/* Profil-kort */}
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl" data-cloud-id="profil-kort" data-cloud-label="Profilinnstillinger" data-cloud-type="section" data-cloud-hint="Visningsnavn og profilbilde">
         <CardHeader>
           <CardTitle>Profil</CardTitle>
           <CardDescription>
@@ -273,6 +273,7 @@ export default function InnstillingerPage() {
               <Button
                 type="submit"
                 disabled={profileForm.formState.isSubmitting}
+                data-cloud-id="lagre-profil" data-cloud-label="Lagre profil" data-cloud-type="action"
               >
                 {profileForm.formState.isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -285,7 +286,7 @@ export default function InnstillingerPage() {
       </Card>
 
       {/* Sikkerhet-kort */}
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl" data-cloud-id="sikkerhet-kort" data-cloud-label="Sikkerhetsinnstillinger" data-cloud-type="section" data-cloud-hint="Passord og tilkoblede kontoer">
         <CardHeader>
           <CardTitle>Sikkerhet</CardTitle>
           <CardDescription>
@@ -407,7 +408,7 @@ export default function InnstillingerPage() {
       </Card>
 
       {/* Faresone-kort */}
-      <Card className="max-w-2xl border-destructive/50">
+      <Card className="max-w-2xl border-destructive/50" data-cloud-id="faresone-kort" data-cloud-label="Faresone" data-cloud-type="section" data-cloud-hint="Slett konto — irreversibel handling">
         <CardHeader>
           <CardTitle className="text-destructive">Faresone</CardTitle>
           <CardDescription>

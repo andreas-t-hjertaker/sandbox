@@ -42,7 +42,7 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
     : navItems;
 
   return (
-    <nav className="space-y-1">
+    <nav className="space-y-1" data-cloud-id="sidebar-nav" data-cloud-label="Sidenavigasjon" data-cloud-type="nav">
       {allItems.map((item) => {
         const isActive =
           pathname === item.href ||
@@ -52,6 +52,9 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
             key={item.href}
             href={item.href}
             onClick={onClick}
+            data-cloud-id={`nav-${item.href.replace(/\//g, "-").slice(1)}`}
+            data-cloud-label={item.label}
+            data-cloud-type="nav"
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
               isActive
