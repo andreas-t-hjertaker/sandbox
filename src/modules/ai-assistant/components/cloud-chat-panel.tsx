@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,10 +17,11 @@ type CloudChatPanelProps = {
   config?: ChatConfig;
   elements?: ScannedElement[];
   onActions?: (actions: CloudAction[]) => void;
+  onStreamingChange?: (streaming: boolean) => void;
   onClose: () => void;
 };
 
-export function CloudChatPanel({ config, elements, onActions, onClose }: CloudChatPanelProps) {
+export function CloudChatPanel({ config, elements, onActions, onStreamingChange, onClose }: CloudChatPanelProps) {
   const { user } = useAuth();
   const pathname = usePathname();
 
@@ -38,6 +39,11 @@ export function CloudChatPanel({ config, elements, onActions, onClose }: CloudCh
 
   const { messages, sendMessage, clearMessages, isStreaming } =
     useChatSession(context, config, { elements: elementsSummary, onActions });
+
+  // Rapporter streaming-status til parent for animasjoner
+  useEffect(() => {
+    onStreamingChange?.(isStreaming);
+  }, [isStreaming, onStreamingChange]);
 
   const title = config?.title || "AI-assistent";
   const welcomeMessage =

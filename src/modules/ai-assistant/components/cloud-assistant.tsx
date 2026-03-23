@@ -11,6 +11,7 @@ import { Spotlight } from "./spotlight";
 import { useDomScanner } from "../hooks/use-dom-scanner";
 import { useProactiveTriggers } from "../hooks/use-proactive-triggers";
 import type { CloudAction } from "../lib/cloud-actions";
+import { SLEEP_TIMEOUT_MS, type CloudExpression } from "../lib/cloud-animations";
 import type { ChatConfig } from "../types";
 
 type CloudAssistantProps = {
@@ -32,10 +33,48 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
     }
   }, [state.bubble]);
 
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [isSleeping, setIsSleeping] = useState(false);
+  const lastInteractionRef = useRef(Date.now());
+
   // Reset ved route-endring
   useEffect(() => {
     dispatch({ type: "DISMISS" });
   }, [pathname, dispatch]);
+
+  // Track inaktivitet for sleeping-animasjon
+  useEffect(() => {
+    const resetTimer = () => {
+      lastInteractionRef.current = Date.now();
+      setIsSleeping(false);
+    };
+    window.addEventListener("click", resetTimer, { passive: true });
+    window.addEventListener("keydown", resetTimer, { passive: true });
+    window.addEventListener("mousemove", resetTimer, { passive: true });
+
+    const interval = setInterval(() => {
+      if (Date.now() - lastInteractionRef.current > SLEEP_TIMEOUT_MS) {
+        setIsSleeping(true);
+      }
+    }, 10_000);
+
+    return () => {
+      window.removeEventListener("click", resetTimer);
+      window.removeEventListener("keydown", resetTimer);
+      window.removeEventListener("mousemove", resetTimer);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Beregn expression basert på tilstand
+  const expression: CloudExpression = (() => {
+    if (isStreaming) return "thinking";
+    if (state.mode === "navigating") return "flying";
+    if (state.mode === "speaking" || state.mode === "highlighting") return "curious";
+    if (state.mode === "touring") return "pointing";
+    if (isSleeping && state.mode === "idle" && !state.chatOpen) return "sleeping";
+    return "floating";
+  })();
 
   const handleCloudClick = () => {
     if (state.mode === "touring") {
@@ -158,6 +197,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
                 config={config}
                 elements={elements}
                 onActions={handleActions}
+                onStreamingChange={setIsStreaming}
                 onClose={toggleChat}
               />
             ) : (
@@ -181,6 +221,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
                         ? "idle"
                         : "idle"
                   }
+                  expression={expression}
                   targetPosition={targetPosition}
                   hasNotification={false}
                   onClick={handleCloudClick}
