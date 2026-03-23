@@ -36,6 +36,7 @@ export {
 // Komponenter
 export { SplitViewLayout } from "./components/split-view-layout";
 export { DesignerChat } from "./components/designer-chat";
+export { BPMNCanvas, toReactFlowNodes, toReactFlowEdges, fromReactFlowNodes } from "./components/bpmn-canvas";
 
 // LLM Orchestrator
 export {
