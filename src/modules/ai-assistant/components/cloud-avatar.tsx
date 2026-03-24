@@ -136,8 +136,8 @@ export function CloudAvatar({
         >
           <defs>
             <linearGradient id="cloud-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="1" />
-              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.85" />
+              <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity="0.75" />
             </linearGradient>
           </defs>
           <path
@@ -145,12 +145,12 @@ export function CloudAvatar({
             fill="url(#cloud-grad)"
           />
           {/* Øyne */}
-          <circle cx="24" cy="20" r="2" fill="hsl(var(--primary-foreground))" />
-          <circle cx="38" cy="20" r="2" fill="hsl(var(--primary-foreground))" />
+          <circle cx="24" cy="20" r="2" fill="hsl(var(--background))" />
+          <circle cx="38" cy="20" r="2" fill="hsl(var(--background))" />
           {/* Munn — smil */}
           <path
             d="M28 25c1.5 2 5.5 2 7 0"
-            stroke="hsl(var(--primary-foreground))"
+            stroke="hsl(var(--background))"
             strokeWidth="1.5"
             strokeLinecap="round"
           />
@@ -173,7 +173,7 @@ export function CloudAvatar({
               opacity: [0.5, 0, 0.5],
             }}
             transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute inset-0 rounded-full bg-primary/20"
+            className="absolute inset-0 rounded-full bg-foreground/20"
           />
         )}
       </motion.div>
