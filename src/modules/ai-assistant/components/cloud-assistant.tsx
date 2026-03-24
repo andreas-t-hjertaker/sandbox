@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
@@ -169,6 +169,16 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
         })()
       : undefined;
 
+  // Track cloud avatar DOMRect for speech bubble positioning
+  const cloudWrapperRef = useRef<HTMLDivElement>(null);
+  const [cloudRect, setCloudRect] = useState<DOMRect | undefined>();
+
+  useEffect(() => {
+    if (!state.bubble || state.chatOpen) return;
+    const el = cloudWrapperRef.current;
+    if (el) setCloudRect(el.getBoundingClientRect());
+  }, [state.bubble, state.chatOpen]);
+
   const welcomeMessage =
     config?.welcomeMessage || "Hei! Jeg er din AI-assistent. Spør meg om hva som helst!";
   const placeholder = config?.placeholder || "Skriv en melding...";
@@ -188,7 +198,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
       </AnimatePresence>
 
       {/* Cloud Avatar wrapper med bubble og chat */}
-      <div className="fixed right-6 bottom-6 z-[9999]">
+      <div ref={cloudWrapperRef} className="fixed right-6 bottom-6 z-[9999]">
         {/* Chat panel */}
         <AnimatePresence>
           {state.chatOpen && (
@@ -239,6 +249,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
               variant={state.bubble.variant}
               autoHide={state.bubble.autoHide}
               onDismiss={dismiss}
+              cloudRect={cloudRect}
               actions={
                 state.mode === "touring" && state.tour
                   ? [
