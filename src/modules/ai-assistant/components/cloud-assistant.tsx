@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { CloudProvider, useCloud } from "../context/cloud-provider";
 import { CloudAvatar } from "./cloud-avatar";
@@ -197,13 +197,69 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
           )}
       </AnimatePresence>
 
-      {/* Cloud Avatar wrapper med bubble og chat */}
+      {/* Cloud Avatar wrapper med morph-animasjon */}
       <div ref={cloudWrapperRef} className="fixed right-6 bottom-6 z-[9999]">
-        {/* Chat panel */}
+        {/* Snakkeboble */}
         <AnimatePresence>
-          {state.chatOpen && (
-            <div className="absolute right-0 bottom-16 w-[340px] overflow-hidden rounded-xl border border-border bg-card shadow-xl sm:w-[380px]">
-              <div className="flex h-[420px] flex-col">
+          {state.bubble && state.mode !== "dragging" && !state.chatOpen && (
+            <SpeechBubble
+              content={state.bubble.message}
+              variant={state.bubble.variant}
+              autoHide={state.bubble.autoHide}
+              onDismiss={dismiss}
+              cloudRect={cloudRect}
+              actions={
+                state.mode === "touring" && state.tour
+                  ? [
+                      {
+                        label: `Neste (${state.tour.current + 1}/${state.tour.steps.length})`,
+                        onClick: nextTourStep,
+                      },
+                      {
+                        label: "Avslutt",
+                        onClick: cancelTour,
+                        variant: "ghost",
+                      },
+                    ]
+                  : undefined
+              }
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Morph container — sky → chat-panel */}
+        <motion.div
+          layout
+          layoutId="cloud-morph"
+          animate={
+            state.chatOpen
+              ? {
+                  width: 380,
+                  height: 480,
+                  borderRadius: 16,
+                }
+              : {
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                }
+          }
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          className="relative overflow-hidden"
+          style={{ originX: 1, originY: 1 }}
+        >
+          {/* Chat-innhold (synlig når åpen) */}
+          <AnimatePresence>
+            {state.chatOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 0.1, duration: 0.2 }}
+                className="flex h-full w-full flex-col border border-border bg-card shadow-xl"
+                style={{ borderRadius: 16 }}
+              >
+                {/* Header */}
                 <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
                   <span className="text-sm font-medium">
                     {config?.title || "ketl assistent"}
@@ -236,56 +292,39 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
                   disabled={isStreaming}
                   placeholder={placeholder}
                 />
-              </div>
-            </div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {/* Snakkeboble */}
-        <AnimatePresence>
-          {state.bubble && state.mode !== "dragging" && !state.chatOpen && (
-            <SpeechBubble
-              content={state.bubble.message}
-              variant={state.bubble.variant}
-              autoHide={state.bubble.autoHide}
-              onDismiss={dismiss}
-              cloudRect={cloudRect}
-              actions={
-                state.mode === "touring" && state.tour
-                  ? [
-                      {
-                        label: `Neste (${state.tour.current + 1}/${state.tour.steps.length})`,
-                        onClick: nextTourStep,
-                      },
-                      {
-                        label: "Avslutt",
-                        onClick: cancelTour,
-                        variant: "ghost",
-                      },
-                    ]
-                  : undefined
-              }
-            />
-          )}
-        </AnimatePresence>
-
-        <CloudAvatar
-          state={
-            state.mode === "navigating"
-              ? "navigating"
-              : state.mode === "dragging"
-                ? "idle"
-                : state.chatOpen
-                  ? "chatOpen"
-                  : "idle"
-          }
-          isStreaming={state.isStreaming}
-          targetPosition={targetPosition}
-          hasNotification={!state.chatOpen && messages.length > 0 && !isStreaming}
-          onClick={handleCloudClick}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        />
+          {/* Sky-avatar (synlig når lukket) */}
+          <AnimatePresence>
+            {!state.chatOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0"
+              >
+                <CloudAvatar
+                  state={
+                    state.mode === "navigating"
+                      ? "navigating"
+                      : state.mode === "dragging"
+                        ? "idle"
+                        : "idle"
+                  }
+                  isStreaming={state.isStreaming}
+                  targetPosition={targetPosition}
+                  hasNotification={messages.length > 0 && !isStreaming}
+                  onClick={handleCloudClick}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </>
   );
