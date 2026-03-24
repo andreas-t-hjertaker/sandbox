@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
 import { CloudProvider, useCloud } from "../context/cloud-provider";
 import { CloudAvatar } from "./cloud-avatar";
 import { SpeechBubble } from "./speech-bubble";
 import { Spotlight } from "./spotlight";
 import { useDomScanner } from "../hooks/use-dom-scanner";
+import { useProactiveTriggers } from "../hooks/use-proactive-triggers";
+import { useCloudActions } from "../hooks/use-cloud-actions";
+import { useChatSession } from "../hooks/use-chat";
+import { ChatMessages } from "./chat-messages";
+import { ChatInput } from "./chat-input";
+import { getDefaultContext } from "../lib/context";
+import type { CloudAction } from "../lib/cloud-actions";
 import type { ChatConfig } from "../types";
 
 type CloudAssistantProps = {
@@ -15,10 +23,117 @@ type CloudAssistantProps = {
 };
 
 function CloudAssistantInner({ config }: CloudAssistantProps) {
-  const { state, dispatch, dismiss, toggleChat, nextTourStep, cancelTour } =
-    useCloud();
+  const {
+    state,
+    dispatch,
+    dismiss,
+    navigateTo,
+    speak,
+    startTour,
+    toggleChat,
+    nextTourStep,
+    cancelTour,
+  } = useCloud();
   const { elements, getElement } = useDomScanner();
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  // Build context for AI
+  const context = useMemo(() => {
+    if (config?.contextProvider) {
+      return config.contextProvider();
+    }
+    return getDefaultContext(user, pathname);
+  }, [user, pathname, config]);
+
+  // Cloud action callbacks
+  const handleNavigate = useCallback(
+    (targetId: string, message: string, highlight = true) => {
+      navigateTo(targetId, message, highlight);
+    },
+    [navigateTo]
+  );
+
+  const handleSpeak = useCallback(
+    (message: string, variant?: string, autoHide?: number) => {
+      speak(
+        message,
+        (variant as "info" | "success" | "warning") || "info",
+        autoHide
+      );
+    },
+    [speak]
+  );
+
+  const handleTour = useCallback(
+    (steps: { targetId: string; message: string }[]) => {
+      startTour(steps);
+    },
+    [startTour]
+  );
+
+  // useCloudActions for parsing LLM responses
+  const { processResponse } = useCloudActions({
+    elements,
+    onNavigate: handleNavigate,
+    onSpeak: handleSpeak,
+    onTour: handleTour,
+  });
+
+  // Handle cloud actions from chat
+  const handleCloudActions = useCallback(
+    (actions: CloudAction[]) => {
+      for (const action of actions) {
+        switch (action.type) {
+          case "navigate":
+            handleNavigate(action.targetId, action.message, action.highlight);
+            break;
+          case "speak":
+            handleSpeak(action.message, action.variant, action.autoHide);
+            break;
+          case "tour":
+            handleTour(action.steps);
+            break;
+          case "data":
+            dispatch({
+              type: "SHOW_DATA",
+              message: action.title,
+              variant: "info",
+            });
+            break;
+          case "idle":
+            break;
+        }
+      }
+    },
+    [handleNavigate, handleSpeak, handleTour, dispatch]
+  );
+
+  // Handle streaming state changes
+  const handleStreamingChange = useCallback(
+    (streaming: boolean) => {
+      dispatch({ type: "SET_STREAMING", isStreaming: streaming });
+    },
+    [dispatch]
+  );
+
+  // Chat session with element context and cloud actions
+  const { messages, sendMessage, clearMessages, isStreaming } = useChatSession({
+    context,
+    config,
+    elements,
+    onCloudActions: handleCloudActions,
+    onStreamingChange: handleStreamingChange,
+  });
+
+  // Proactive triggers
+  useProactiveTriggers({
+    elements,
+    enabled: !state.chatOpen && state.mode === "idle",
+    onNavigate: handleNavigate,
+    onSpeak: (message, variant) => handleSpeak(message, variant),
+    onTour: handleTour,
+  });
 
   // Reset ved route-endring
   useEffect(() => {
@@ -54,6 +169,10 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
         })()
       : undefined;
 
+  const welcomeMessage =
+    config?.welcomeMessage || "Hei! Jeg er din AI-assistent. Spør meg om hva som helst!";
+  const placeholder = config?.placeholder || "Skriv en melding...";
+
   return (
     <>
       {/* Spotlight overlay */}
@@ -68,11 +187,53 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
           )}
       </AnimatePresence>
 
-      {/* Cloud Avatar wrapper med bubble */}
+      {/* Cloud Avatar wrapper med bubble og chat */}
       <div className="fixed right-6 bottom-6 z-[9999]">
+        {/* Chat panel */}
+        <AnimatePresence>
+          {state.chatOpen && (
+            <div className="absolute right-0 bottom-16 w-[340px] overflow-hidden rounded-xl border border-border bg-card shadow-xl sm:w-[380px]">
+              <div className="flex h-[420px] flex-col">
+                <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                  <span className="text-sm font-medium">
+                    {config?.title || "ketl assistent"}
+                  </span>
+                  <div className="flex gap-1">
+                    {messages.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearMessages}
+                        className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        Tøm
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={toggleChat}
+                      className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      Lukk
+                    </button>
+                  </div>
+                </div>
+                <ChatMessages
+                  messages={messages}
+                  welcomeMessage={welcomeMessage}
+                />
+                <ChatInput
+                  onSend={sendMessage}
+                  disabled={isStreaming}
+                  placeholder={placeholder}
+                />
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
+
         {/* Snakkeboble */}
         <AnimatePresence>
-          {state.bubble && state.mode !== "dragging" && (
+          {state.bubble && state.mode !== "dragging" && !state.chatOpen && (
             <SpeechBubble
               content={state.bubble.message}
               variant={state.bubble.variant}
@@ -109,7 +270,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
           }
           isStreaming={state.isStreaming}
           targetPosition={targetPosition}
-          hasNotification={false}
+          hasNotification={!state.chatOpen && messages.length > 0 && !isStreaming}
           onClick={handleCloudClick}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
@@ -122,7 +283,8 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
 /**
  * CloudAssistant — sammensatt komponent som koordinerer alle sky-delene.
  *
- * Wrapper hele appen med CloudProvider og rendrer Cloud Avatar, Speech Bubble og Spotlight.
+ * Wrapper hele appen med CloudProvider og rendrer Cloud Avatar,
+ * Chat, Speech Bubble, Spotlight og aktiverer proaktive triggere.
  */
 export function CloudAssistant(props: CloudAssistantProps) {
   return (
