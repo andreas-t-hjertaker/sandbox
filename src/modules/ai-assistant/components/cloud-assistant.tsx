@@ -107,6 +107,7 @@ function CloudAssistantInner({ config }: CloudAssistantProps) {
                   ? "chatOpen"
                   : "idle"
           }
+          isStreaming={state.isStreaming}
           targetPosition={targetPosition}
           hasNotification={false}
           onClick={handleCloudClick}

@@ -8,11 +8,20 @@ import {
   type PanInfo,
 } from "framer-motion";
 import { springPresets } from "@/components/motion/presets";
+import {
+  cloudVariants,
+  eyeVariants,
+  mouthVariants,
+  SLEEP_TIMEOUT_MS,
+  type CloudExpression,
+} from "../lib/cloud-animations";
 
 export type CloudAvatarState = "idle" | "navigating" | "highlighting" | "chatOpen" | "dragging";
 
 type CloudAvatarProps = {
   state?: CloudAvatarState;
+  expression?: CloudExpression;
+  isStreaming?: boolean;
   targetPosition?: { x: number; y: number };
   hasNotification?: boolean;
   onClick?: () => void;
@@ -27,8 +36,26 @@ const DEFAULT_HOME = { x: -24, y: -24 };
 /** Terskel for å skille klikk fra drag (piksel) */
 const DRAG_THRESHOLD = 5;
 
+/** Map state + context til riktig CloudExpression */
+function resolveExpression(
+  state: CloudAvatarState,
+  explicit?: CloudExpression,
+  isStreaming?: boolean,
+  lastActivityMs?: number,
+): CloudExpression {
+  if (explicit) return explicit;
+  if (isStreaming) return "thinking";
+  if (state === "navigating") return "flying";
+  if (state === "highlighting") return "pointing";
+  if (state === "chatOpen") return "curious";
+  if (lastActivityMs && lastActivityMs > SLEEP_TIMEOUT_MS) return "sleeping";
+  return "floating";
+}
+
 export function CloudAvatar({
   state = "idle",
+  expression: explicitExpression,
+  isStreaming = false,
   targetPosition,
   hasNotification = false,
   onClick,
@@ -38,10 +65,32 @@ export function CloudAvatar({
 }: CloudAvatarProps) {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastActivityRef = useRef(Date.now());
+  const [lastActivityMs, setLastActivityMs] = useState(0);
   const controls = useAnimationControls();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track inactivity for sleeping expression
+  useEffect(() => {
+    const resetActivity = () => { lastActivityRef.current = Date.now(); };
+    window.addEventListener("click", resetActivity, { passive: true });
+    window.addEventListener("keydown", resetActivity, { passive: true });
+    const timer = setInterval(() => {
+      setLastActivityMs(Date.now() - lastActivityRef.current);
+    }, 10_000);
+    return () => {
+      window.removeEventListener("click", resetActivity);
+      window.removeEventListener("keydown", resetActivity);
+      clearInterval(timer);
+    };
+  }, []);
+
+  const currentExpression = resolveExpression(state, explicitExpression, isStreaming, lastActivityMs);
+  const bodyAnim = cloudVariants[currentExpression];
+  const eyes = eyeVariants[currentExpression];
+  const mouth = mouthVariants[currentExpression];
 
   // Naviger til target-posisjon
   useEffect(() => {
@@ -100,12 +149,9 @@ export function CloudAvatar({
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const floatingAnimation = prefersReducedMotion
+  const expressionAnimation = prefersReducedMotion
     ? {}
-    : {
-        y: [0, -6, 0],
-        transition: { repeat: Infinity, duration: 3, ease: "easeInOut" as const },
-      };
+    : { ...bodyAnim.animate, transition: bodyAnim.transition };
 
   return (
     <div
@@ -121,7 +167,7 @@ export function CloudAvatar({
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         onTap={handleTap}
-        animate={state === "navigating" ? controls : floatingAnimation}
+        animate={state === "navigating" ? controls : expressionAnimation}
         style={{ x, y }}
         whileHover={prefersReducedMotion ? {} : { scale: 1.08 }}
         whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
@@ -144,15 +190,16 @@ export function CloudAvatar({
             d="M52 34H14C7.4 34 2 28.6 2 22c0-5.5 3.7-10.1 8.8-11.5C12.2 4.5 17.6 0 24 0c5.2 0 9.7 2.8 12.2 7 1-.4 2.1-.6 3.3-.6 5 0 9.1 3.7 9.8 8.5C55.3 16 60 21.2 60 27.5 60 31.1 56.4 34 52 34Z"
             fill="url(#cloud-grad)"
           />
-          {/* Øyne */}
-          <circle cx="24" cy="20" r="2" fill="hsl(var(--background))" />
-          <circle cx="38" cy="20" r="2" fill="hsl(var(--background))" />
-          {/* Munn — smil */}
+          {/* Øyne — dynamisk basert på expression */}
+          <circle cx={eyes.left.cx} cy={eyes.left.cy} r={eyes.left.r} fill="hsl(var(--background))" />
+          <circle cx={eyes.right.cx} cy={eyes.right.cy} r={eyes.right.r} fill="hsl(var(--background))" />
+          {/* Munn — dynamisk basert på expression */}
           <path
-            d="M28 25c1.5 2 5.5 2 7 0"
+            d={mouth}
             stroke="hsl(var(--background))"
             strokeWidth="1.5"
             strokeLinecap="round"
+            fill="none"
           />
         </svg>
 
