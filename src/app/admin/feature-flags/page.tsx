@@ -95,7 +95,7 @@ export default function FeatureFlagsPage() {
             Kontroller funksjoner og tilgjengelighet per plan.
           </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} data-cloud-id="opprett-flagg" data-cloud-label="Opprett feature flag" data-cloud-type="action">
+        <Button onClick={() => setShowForm(!showForm)} data-cloud-id="opprett-flagg" data-cloud-label="Opprett feature flag" data-cloud-type="action" data-cloud-hint="Åpner skjema for å lage et nytt funksjonsflagg med nøkkel, etikett og planer">
           <Plus className="mr-2 h-4 w-4" />
           Nytt flagg
         </Button>
@@ -161,7 +161,7 @@ export default function FeatureFlagsPage() {
         </Card>
       )}
 
-      <div className="space-y-3" data-cloud-id="flagg-liste" data-cloud-label="Feature flag-liste" data-cloud-type="section">
+      <div className="space-y-3" data-cloud-id="flagg-liste" data-cloud-label="Feature flag-liste" data-cloud-type="section" data-cloud-hint="Alle feature flags med toggle og sletteknapper per flagg">
         {flags.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
@@ -170,7 +170,7 @@ export default function FeatureFlagsPage() {
           </Card>
         ) : (
           flags.map((flag) => (
-            <Card key={flag.id}>
+            <Card key={flag.id} data-cloud-id={`flagg-${flag.key}`} data-cloud-label={flag.label} data-cloud-type="toggle" data-cloud-hint={`Feature flag: ${flag.key} — ${flag.enabled ? "aktiv" : "inaktiv"}`}>
               <CardContent className="flex items-center justify-between py-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">

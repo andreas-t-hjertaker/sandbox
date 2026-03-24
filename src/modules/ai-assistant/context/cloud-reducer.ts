@@ -32,6 +32,7 @@ export type CloudState = {
   bubble?: BubbleState;
   tour?: { steps: TourStep[]; current: number };
   chatOpen: boolean;
+  isStreaming: boolean;
 };
 
 export type CloudAction =
@@ -48,13 +49,15 @@ export type CloudAction =
   | { type: "OPEN_CHAT" }
   | { type: "CLOSE_CHAT" }
   | { type: "SET_POSITION"; position: { x: number; y: number } }
-  | { type: "SHOW_DATA"; message: string; variant?: "info" };
+  | { type: "SHOW_DATA"; message: string; variant?: "info" }
+  | { type: "SET_STREAMING"; isStreaming: boolean };
 
 export const initialCloudState: CloudState = {
   mode: "idle",
   position: { x: 0, y: 0 },
   homePosition: { x: 0, y: 0 },
   chatOpen: false,
+  isStreaming: false,
 };
 
 export function cloudReducer(state: CloudState, action: CloudAction): CloudState {
@@ -197,6 +200,12 @@ export function cloudReducer(state: CloudState, action: CloudAction): CloudState
       return {
         ...state,
         position: action.position,
+      };
+
+    case "SET_STREAMING":
+      return {
+        ...state,
+        isStreaming: action.isStreaming,
       };
 
     default:

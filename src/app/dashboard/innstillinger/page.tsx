@@ -198,7 +198,7 @@ export default function InnstillingerPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div data-cloud-id="innstillinger-header" data-cloud-label="Innstillinger" data-cloud-type="section" data-cloud-hint="Innstillingssiden — profil, sikkerhet og kontoadministrasjon">
         <h1 className="text-2xl font-bold tracking-tight">Innstillinger</h1>
         <p className="text-muted-foreground">
           Administrer profil, sikkerhet og kontoinnstillinger.

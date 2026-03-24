@@ -4,7 +4,8 @@ import { useState, useCallback, useRef } from "react";
 import { getModel } from "@/lib/firebase/ai";
 import { generateId } from "@/lib/utils";
 import { buildSystemPrompt } from "../lib/system-prompt";
-import type { ChatMessage, ChatConfig, AssistantContext } from "../types";
+import { parseCloudActions, type CloudAction } from "../lib/cloud-actions";
+import type { ChatMessage, ChatConfig, AssistantContext, ScannedElement } from "../types";
 
 type ChatSession = {
   sendMessageStream: (msg: string) => Promise<{
@@ -12,20 +13,45 @@ type ChatSession = {
   }>;
 };
 
+type UseChatOptions = {
+  context: AssistantContext;
+  config?: ChatConfig;
+  elements?: ScannedElement[];
+  onCloudActions?: (actions: CloudAction[]) => void;
+  onStreamingChange?: (streaming: boolean) => void;
+};
+
 export function useChatSession(
-  context: AssistantContext,
-  config?: ChatConfig
+  contextOrOptions: AssistantContext | UseChatOptions,
+  configArg?: ChatConfig
 ) {
+  // Support both old (context, config) and new (options) signatures
+  const isOptions = "context" in contextOrOptions && !("appName" in contextOrOptions);
+  const options: UseChatOptions = isOptions
+    ? contextOrOptions as UseChatOptions
+    : { context: contextOrOptions as AssistantContext, config: configArg };
+
+  const { context, config, elements, onCloudActions, onStreamingChange } = options;
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const chatRef = useRef<ChatSession | null>(null);
   const contextRef = useRef(context);
+  const elementsRef = useRef(elements);
+  elementsRef.current = elements;
 
-  // Opprett ny chat-sesjon med gjeldende kontekst
+  // Opprett ny chat-sesjon med gjeldende kontekst + element-kontekst
   function createSession() {
+    const elementData = elementsRef.current?.map((el) => ({
+      id: el.id,
+      label: el.label,
+      type: el.type,
+      hint: el.hint,
+    }));
+
     const systemPrompt = config?.systemPrompt
       ? config.systemPrompt
-      : buildSystemPrompt(context, undefined);
+      : buildSystemPrompt(context, undefined, elementData);
 
     const model = getModel(config?.modelName);
     const session = model.startChat({
@@ -51,6 +77,14 @@ export function useChatSession(
     return chatRef.current;
   }
 
+  const setStreamingState = useCallback(
+    (streaming: boolean) => {
+      setIsStreaming(streaming);
+      onStreamingChange?.(streaming);
+    },
+    [onStreamingChange]
+  );
+
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || isStreaming) return;
@@ -72,7 +106,7 @@ export function useChatSession(
       };
 
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
-      setIsStreaming(true);
+      setStreamingState(true);
 
       try {
         const session = getSession();
@@ -96,14 +130,23 @@ export function useChatSession(
           }
         }
 
-        // Marker streaming som ferdig
+        // Parse cloud actions fra ferdig respons
+        const { text: cleanText, actions } = parseCloudActions(fullText);
+
+        // Oppdater melding med ren tekst (uten cloud-action blokker)
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantId ? { ...m, streaming: false } : m
+            m.id === assistantId
+              ? { ...m, content: cleanText, streaming: false }
+              : m
           )
         );
+
+        // Dispatch cloud actions
+        if (actions.length > 0) {
+          onCloudActions?.(actions);
+        }
       } catch (err) {
-        // Ved feil, vis feilmelding som assistentens svar
         const errorMsg =
           err instanceof Error ? err.message : "Ukjent feil oppstod";
         setMessages((prev) =>
@@ -118,11 +161,11 @@ export function useChatSession(
           )
         );
       } finally {
-        setIsStreaming(false);
+        setStreamingState(false);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isStreaming, context]
+    [isStreaming, context, setStreamingState]
   );
 
   const clearMessages = useCallback(() => {
