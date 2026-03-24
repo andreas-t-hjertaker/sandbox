@@ -75,14 +75,14 @@ export default function UtviklerPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-cloud-id="utvikler-header" data-cloud-label="Utviklerinnstillinger" data-cloud-type="section" data-cloud-hint="Administrer API-nøkler for programmatisk tilgang til ketl cloud API">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Utvikler</h1>
           <p className="text-muted-foreground">
             Administrer API-nøkler for programmatisk tilgang.
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} disabled={showForm}>
+        <Button onClick={() => setShowForm(true)} disabled={showForm} data-cloud-id="opprett-nokkel-knapp" data-cloud-label="Opprett ny API-nøkkel" data-cloud-type="action" data-cloud-hint="Åpner skjema for å generere en ny API-nøkkel">
           <Plus className="mr-2 h-4 w-4" />
           Opprett ny nøkkel
         </Button>
@@ -171,7 +171,7 @@ export default function UtviklerPage() {
       )}
 
       {/* Eksisterende nøkler */}
-      <Card>
+      <Card data-cloud-id="api-nokler-tabell" data-cloud-label="API-nøkler" data-cloud-type="section" data-cloud-hint="Liste over alle API-nøkler med status og bruksinfo">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code className="h-5 w-5" />
@@ -238,7 +238,7 @@ export default function UtviklerPage() {
       </Card>
 
       {/* Brukseksempel */}
-      <Card>
+      <Card data-cloud-id="api-brukseksempel" data-cloud-label="Brukseksempel" data-cloud-type="section" data-cloud-hint="Viser curl-eksempel for å bruke API-nøkkelen">
         <CardHeader>
           <CardTitle>Brukseksempel</CardTitle>
           <CardDescription>
